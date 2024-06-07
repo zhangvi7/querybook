@@ -24,13 +24,13 @@ interface ISelectFreeOption {
     value: string;
 }
 
-interface ISelectUserOption {
+export interface ISelectUserOption {
     label?: string | ReactElement;
     value: number;
     isUser: boolean;
 }
 
-type ISelectOption = ISelectFreeOption | ISelectUserOption;
+export type ISelectOption = ISelectFreeOption | ISelectUserOption;
 
 function getUserName(user: IUserSearchResultRow) {
     return (user.fullname || user.username || 'Unknown').trim();

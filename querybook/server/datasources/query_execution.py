@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 from flask import abort, Response, redirect
 from flask_login import current_user
@@ -663,3 +664,162 @@ def transpile_query(
 ):
     transpiler = get_transpiler_by_name(transpiler_name)
     return transpiler.transpile(query, from_language, to_language)
+
+
+@register("/query_execution/review/", methods=["POST"])
+def create_query_execution_review(
+    query: str,
+    engine_id: int,
+    reviewer_ids: List[str],
+    data_cell_id=None,
+    originator=None,
+):
+    verify_query_engine_permission(engine_id)
+    with DBSession() as session:
+        uid = current_user.id
+        query_execution = logic.create_query_execution(  # TODO: on query change, invalidate any pre-existing reviews before adding new reviews
+            query=query,
+            engine_id=engine_id,
+            uid=uid,
+            status=QueryExecutionStatus.PENDING_REVIEW,
+            commit=False,
+            session=session,
+        )
+
+        # data_doc = None
+        # if data_cell_id:
+        #     datadoc_logic.append_query_executions_to_data_cell(
+        #         data_cell_id, [query_execution.id], session=session
+        #     )
+        #     data_cell = datadoc_logic.get_data_cell_by_id(data_cell_id, session=session)
+        #     data_doc = data_cell.doc
+
+        # TODO: resetting review status on query cell change ??
+        for reviewer_id in reviewer_ids:
+            logic.create_review(
+                execution_id=query_execution.id,
+                reviewer_id=reviewer_id,
+                status=QueryExecutionStatus.PENDING_REVIEW,
+                commit=False,
+                session=session,
+            )
+        session.commit()
+        send_query_execution_review_request_notification(
+            reviewer_ids=reviewer_ids,
+            execution_id=query_execution.id,
+            uid=uid,
+            session=session,
+        )
+        return query_execution.to_dict()
+
+
+@register("/query_execution/<int:execution_id>/review/", methods=["PUT"])
+def query_execution_review_decision(
+    execution_id: int, reviewer_id: int, approved: bool
+) -> dict:
+    print("INSIDE APPROVAL REVIEW")
+    with DBSession() as session:
+        verify_query_execution_permission(execution_id, session=session)
+
+        query_review = logic.get_review_by_execution_and_reviewer(
+            execution_id=execution_id,
+            reviewer_id=reviewer_id,
+            session=session,
+        )
+
+        if approved:
+            logic.update_review(  # TODO: notify all other reviewers that this review has been approved
+                id=query_review.id,
+                fields={"review_status": QueryExecutionStatus.APPROVED},
+                session=session,
+                commit=False,
+            )
+            logic.update_query_execution(
+                execution_id, status=QueryExecutionStatus.INITIALIZED, session=session
+            )
+            update_and_run_query(execution_id, session=session)
+        else:
+            logic.update_review(  # TODO: delete all rejected review entries ?
+                id=query_review.id,
+                fields={"review_status": QueryExecutionStatus.REJECTED},
+                session=session,
+                commit=False,
+            )
+            logic.update_query_execution(
+                execution_id, status=QueryExecutionStatus.REJECTED, session=session
+            )
+
+        send_query_execution_review_decision_notification(
+            reviewer_id=reviewer_id,
+            execution_id=execution_id,
+            approved=approved,
+            session=session,
+        )
+
+
+@with_session
+def update_and_run_query(execution_id, session=None):
+    run_query_task.apply_async(args=[execution_id])
+    # TODO get datadoc of this query_execution and emit to all viewers via Websockets
+
+
+def send_query_execution_review_decision_notification(
+    reviewer_id, execution_id, approved, session=None
+):
+    requestor_id = logic.get_query_execution_by_id(execution_id).uid
+    requestor = user_logic.get_user_by_id(requestor_id, session=session)
+    reviewer_full_name = user_logic.get_user_by_id(
+        reviewer_id, session=session
+    ).get_name()
+    environment = get_default_user_environment_by_execution_id(
+        execution_id=execution_id, uid=current_user.id, session=session
+    )
+    execution_url = f"{QuerybookSettings.PUBLIC_URL}/{environment.name}/query_execution/{execution_id}/"
+
+    notify_user(
+        user=requestor,
+        template_name="query_execution_review_decision",
+        template_params=dict(
+            name=reviewer_full_name,
+            execution_url=execution_url,
+            decision="approved" if approved else "rejected",
+        ),
+        notifier_name="slack",
+        session=session,
+    )
+
+
+@with_session
+def send_query_execution_review_request_notification(
+    reviewer_ids, execution_id, uid, session=None
+):
+    requestor = user_logic.get_user_by_id(uid, session=session)
+    requestor_username = requestor.get_name()
+    environment = get_default_user_environment_by_execution_id(
+        execution_id=execution_id, uid=uid, session=session
+    )
+    execution_url = f"{QuerybookSettings.PUBLIC_URL}/{environment.name}/query_execution/{execution_id}/"
+
+    for reviewer_id in reviewer_ids:
+        reviewer = user_logic.get_user_by_id(reviewer_id, session=session)
+        notify_user(
+            user=reviewer,
+            template_name="query_execution_review_request",
+            template_params=dict(
+                username=requestor_username,
+                execution_id=execution_id,
+                execution_url=execution_url,
+            ),
+            notifier_name="slack",
+            session=session,
+        )
+
+
+@register("/query_execution/<int:execution_id>/is_reviewer/", methods=["GET"])
+def get_query_execution_reviews(execution_id):
+    user_id = current_user.id
+    print(user_id)
+    review = logic.get_review_by_execution_and_reviewer(
+        execution_id=execution_id, reviewer_id=user_id
+    )
+    return {"isReviewer": bool(review)}

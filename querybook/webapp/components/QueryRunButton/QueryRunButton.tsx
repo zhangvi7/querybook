@@ -3,6 +3,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 
+import { QueryCellRequestReviewButton } from 'components/QueryCellRequestReviewButton/QueryCellRequestReviewButton';
 import PublicConfig from 'config/querybook_public_config.yaml';
 import { IQueryEngine, QueryEngineStatus } from 'const/queryEngine';
 import { queryEngineStatusToIconStatus } from 'const/queryStatusIcon';
@@ -38,6 +39,7 @@ interface IQueryRunButtonProps extends IQueryEngineSelectorProps {
 
     rowLimit?: number;
     onRunClick: () => any;
+    onRequestReviewClick: (reviewer_ids: number[]) => any;
     onRowLimitChange?: (rowLimit: number) => void;
 
     hasSamplingTables?: boolean;
@@ -59,6 +61,7 @@ export const QueryRunButton = React.forwardRef<
             hasSelection,
             runButtonTooltipPos = 'up',
             onRunClick,
+            onRequestReviewClick,
             queryEngineById,
             queryEngines,
             engineId,
@@ -102,6 +105,14 @@ export const QueryRunButton = React.forwardRef<
             />
         );
 
+        const isRequestReviewEnabled =
+            queryEngineById[engineId]?.feature_params.query_review;
+        const requestReviewButtonDOM = !disabled ? (
+            <QueryCellRequestReviewButton
+                onRequestReviewClick={onRequestReviewClick}
+            />
+        ) : null;
+
         const tableSamplingDOM =
             !disabled && TABLE_SAMPLING_CONFIG.enabled && hasSamplingTables ? (
                 <TableSamplingSelector
@@ -133,7 +144,7 @@ export const QueryRunButton = React.forwardRef<
                 />
                 {tableSamplingDOM}
                 {rowLimitDOM}
-                {runButtonDOM}
+                {isRequestReviewEnabled ? requestReviewButtonDOM : runButtonDOM}
             </div>
         );
     }
