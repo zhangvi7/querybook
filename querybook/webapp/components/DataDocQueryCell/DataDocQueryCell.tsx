@@ -61,6 +61,7 @@ import {
 } from 'redux/queryEngine/selector';
 import { createQueryExecution } from 'redux/queryExecutions/action';
 import { Dispatch, IStoreState } from 'redux/store/types';
+import { QueryExecutionReviewResource } from 'resource/queryExecution';
 import { TextButton } from 'ui/Button/Button';
 import { ThemedCodeHighlight } from 'ui/CodeHighlight/ThemedCodeHighlight';
 import { Dropdown } from 'ui/Dropdown/Dropdown';
@@ -495,6 +496,28 @@ class DataDocQueryCellComponent extends React.PureComponent<IProps, IState> {
     }
 
     @bind
+    public async onRequestReviewClick(reviewer_ids: number[]) {
+        try {
+            const queryExecutionId = await QueryExecutionReviewResource.create(
+                await this.getTransformedQuery(),
+                this.engineId,
+                reviewer_ids,
+                this.props.cellId
+            );
+
+            if (queryExecutionId) {
+                toast.success('Review Requested!');
+            } else {
+                // Handle case where promise resolves but queryExecutionId is false
+                toast.error('Failed to request review. Please try again.');
+            }
+        } catch (error) {
+            // Handle case where promise fails to resolve
+            toast.error(`Error requesting review: ${error.message}`);
+        }
+    }
+
+    @bind
     public formatQuery(options = {}) {
         trackClick({
             component: ComponentType.DATADOC_QUERY_CELL,
@@ -785,6 +808,7 @@ class DataDocQueryCellComponent extends React.PureComponent<IProps, IState> {
                             hasSelection={selectedRange != null}
                             engineId={this.engineId}
                             onRunClick={this.onRunButtonClick}
+                            onRequestReviewClick={this.onRequestReviewClick}
                             onEngineIdSelect={this.handleMetaChange.bind(
                                 this,
                                 'engine'

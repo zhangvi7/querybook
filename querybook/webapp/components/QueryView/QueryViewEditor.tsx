@@ -12,7 +12,10 @@ import { currentEnvironmentSelector } from 'redux/environment/selector';
 import { queryEngineByIdEnvSelector } from 'redux/queryEngine/selector';
 import * as queryExecutionActions from 'redux/queryExecutions/action';
 import { myUserInfoSelector } from 'redux/user/selector';
-import { QueryExecutionResource } from 'resource/queryExecution';
+import {
+    QueryExecutionResource,
+    QueryExecutionReviewResource,
+} from 'resource/queryExecution';
 import { Button } from 'ui/Button/Button';
 import { StatusIcon } from 'ui/StatusIcon/StatusIcon';
 import { Tag } from 'ui/Tag/Tag';
@@ -31,6 +34,25 @@ export const QueryViewEditor: React.FunctionComponent<{
     const showAccessControls =
         queryExecution.uid === userInfo.id && !environment.shareable;
 
+    const {
+        isLoading,
+        isError,
+        data: isReviewer,
+        forceFetch,
+    } = useResource(
+        React.useCallback(
+            () => QueryExecutionReviewResource.getIsReviewer(queryExecution.id),
+            [queryExecution.id]
+        )
+    );
+
+    // if (isLoading) {
+    //     return <Loading />;
+    // }
+    // if (isError) {
+    //     return <ErrorMessage>Error Loading DataDoc Schedule</ErrorMessage>;
+    // }
+
     const dispatch = useDispatch();
     const { data: cellInfo } = useResource(
         React.useCallback(
@@ -38,6 +60,25 @@ export const QueryViewEditor: React.FunctionComponent<{
             [queryExecution.id]
         )
     );
+
+    // useEffect(() => {
+    //     dispatch(fetchIsReviewer({ executionId: queryId }));
+    // }, [dispatch, queryId]);
+
+    // use the useSelector hook to access the review status from your Redux store
+    // may need new redux state for QueryReview table
+    // const isReviewer = useSelector((state: IStoreState) =>
+    // Add your logic to check if the current user is a valid reviewer
+
+    // new queryexecutionreview endpoint to check is reviewer and store in redux store
+
+    // TODO: test if the user is logged out case
+
+    // create a new action in your Redux store to fetch the review status from the
+    ///backend
+    // this action should dispatch a network request to is reviewer API
+    //endpoint
+    // );
 
     const goToDataDoc = React.useCallback(() => {
         if (cellInfo != null) {
@@ -61,6 +102,33 @@ export const QueryViewEditor: React.FunctionComponent<{
         );
         navigateWithinEnv('/adhoc/');
     }, [queryExecution, environment.id]);
+
+    const handleApprove = React.useCallback(async () => {
+        try {
+            await QueryExecutionReviewResource.update(
+                queryExecution.id,
+                userInfo.id,
+                true
+            );
+            alert('Query approved successfully!');
+        } catch (error) {
+            alert(`Error approving query: ${error.message}`);
+        }
+    }, [queryExecution.id, userInfo.id]);
+
+    const handleReject = React.useCallback(() => {
+        QueryExecutionReviewResource.update(
+            queryExecution.id,
+            userInfo.id,
+            false
+        )
+            .then(() => {
+                alert('Query rejected successfully!');
+            })
+            .catch((error) => {
+                alert(`Error rejecting query: ${error.message}`);
+            });
+    }, [queryExecution.id, userInfo.id]);
 
     React.useEffect(() => {
         dispatch(
@@ -124,10 +192,19 @@ export const QueryViewEditor: React.FunctionComponent<{
         <QueryViewEditorShareButton queryExecution={queryExecution} />
     ) : null;
 
+    const queryReviewDOM = isReviewer ? (
+        // && queryExecution.status === QueryExecutionStatus.PENDING_REVIEW ? (
+        <div>
+            <Button onClick={handleApprove}>Approve</Button>
+            <Button onClick={handleReject}>Reject</Button>
+        </div>
+    ) : null;
+
     const editorSectionHeader = (
         <div className="editor-section-header horizontal-space-between">
             <div>{queryExecutionTitleDOM}</div>
             <div className="horizontal-space-between">
+                {queryReviewDOM}
                 {shareExecutionButton}
                 <Button
                     onClick={exportToAdhocQuery}

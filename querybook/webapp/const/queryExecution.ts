@@ -16,6 +16,9 @@ export enum QueryExecutionStatus {
     DONE,
     ERROR,
     CANCEL,
+    PENDING_REVIEW,
+    APPROVED,
+    REJECTED,
 }
 
 export enum StatementExecutionStatus {
@@ -62,6 +65,13 @@ export interface IQueryExecution {
     // it may have a field called total which
     // indicates the total number of statements
     total?: number;
+}
+
+export interface IQueryExecutionReview {
+    id: number;
+    status: number;
+    reviewer_id: number;
+    execution_id: number;
 }
 
 export interface IQueryExecutionExportResult {

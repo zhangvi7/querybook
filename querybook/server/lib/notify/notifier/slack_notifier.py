@@ -1,13 +1,12 @@
 import requests
-from env import QuerybookSettings
+
+# from env import QuerybookSettings
 from lib.notify.base_notifier import BaseNotifier
 
 
 class SlackNotifier(BaseNotifier):
     def __init__(self, token=None):
-        self.token = (
-            token if token is not None else QuerybookSettings.QUERYBOOK_SLACK_TOKEN
-        )
+        self.token = "<app_token>"
 
     @property
     def notifier_name(self):
@@ -34,7 +33,7 @@ class SlackNotifier(BaseNotifier):
             text = self._convert_markdown(message)
             data = {
                 "text": text,
-                "channel": recipient,
+                # "channel": "U0763T3EL79",
             }
             requests.post(url, json=data, headers=headers, timeout=30)
 

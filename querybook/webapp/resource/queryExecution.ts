@@ -6,6 +6,7 @@ import {
     IQueryExecution,
     IQueryExecutionExportStatusInfo,
     IQueryExecutionNotification,
+    IQueryExecutionReview,
     IQueryExecutionViewer,
     IQueryResultExporter,
     IQueryValidationResult,
@@ -197,4 +198,37 @@ export const TemplatedQueryResource = {
             from_language: fromLanguage,
             to_language: toLanguage,
         }),
+};
+
+export const QueryExecutionReviewResource = {
+    create: (
+        query: string,
+        engineId: number,
+        reviewer_ids: number[],
+        cellId?: number
+    ) => {
+        const params = {
+            query,
+            engine_id: engineId,
+            reviewer_ids,
+        };
+        if (cellId != null) {
+            params['data_cell_id'] = cellId;
+            params['originator'] = dataDocSocket.socketId;
+        }
+        return ds.save<IQueryExecutionReview[]>(
+            `/query_execution/review/`,
+            params
+        );
+    },
+    update: (executionId: number, reviewer_id: number, approved: boolean) =>
+        ds.update<IQueryExecutionReview>(
+            `/query_execution/${executionId}/review/`,
+            {
+                reviewer_id,
+                approved,
+            }
+        ),
+    getIsReviewer: (executionId: number) =>
+        ds.fetch<boolean>(`/query_execution/${executionId}/is_reviewer/`),
 };

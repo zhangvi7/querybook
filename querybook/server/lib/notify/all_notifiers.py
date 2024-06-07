@@ -10,8 +10,8 @@ default_notifiers = []
 # Auto-load the EmailNotifier / SlackNotifier if configured
 if QuerybookSettings.EMAILER_CONN and QuerybookSettings.QUERYBOOK_EMAIL_ADDRESS:
     default_notifiers.append(EmailNotifier())
-if QuerybookSettings.QUERYBOOK_SLACK_TOKEN:
-    default_notifiers.append(SlackNotifier())
+# if QuerybookSettings.QUERYBOOK_SLACK_TOKEN:
+default_notifiers.append(SlackNotifier())
 
 # If no other notifiers auto-loaded, enable the NoopNotifier
 if not default_notifiers:

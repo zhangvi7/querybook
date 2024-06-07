@@ -61,6 +61,12 @@ class QueryExecution(Base):
         cascade="all, delete",
         passive_deletes=True,
     )
+    query_execution_reviews = relationship(
+        "QueryExecutionReview",
+        backref="query_execution",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
 
     @with_formatted_date
     def to_dict(self, with_statement=True):
@@ -215,3 +221,32 @@ class QueryExecutionViewer(CRUDMixin, Base):
         uselist=False,
         backref=backref("viewers", cascade="all, delete", passive_deletes=True),
     )
+
+
+class QueryExecutionReview(CRUDMixin, Base):
+    __tablename__ = "query_execution_review"
+
+    id = sql.Column(sql.Integer, primary_key=True)
+    query_execution_id = sql.Column(
+        sql.Integer,
+        sql.ForeignKey("query_execution.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    reviewer_id = sql.Column(
+        sql.Integer, sql.ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    review_status = sql.Column(
+        sql.Enum(QueryExecutionStatus),
+        default=QueryExecutionStatus.PENDING_REVIEW,
+        nullable=False,
+    )
+    created_at = sql.Column(sql.DateTime, default=now)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "query_execution_id": self.query_execution_id,
+            "reviewer_id": self.reviewer_id,
+            "review_status": self.review_status.value,
+            "created_at": self.created_at,
+        }

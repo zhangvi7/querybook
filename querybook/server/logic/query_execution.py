@@ -13,6 +13,7 @@ from models.query_execution import (
     QueryExecutionNotification,
     QueryExecutionError,
     StatementExecutionStreamLog,
+    QueryExecutionReview,
 )
 from models.datadoc import DataCellQueryExecution, DataDocDataCell
 from models.admin import QueryEngine, QueryEngineEnvironment
@@ -578,3 +579,58 @@ def update_es_query_execution_by_id(id):
     QUERY EXECUTION USER NOTIFICATIONS
     ---------------------------------------------------------------------------------------------------------
 """
+
+
+"""
+    ----------------------------------------------------------------------------------------------------------
+    QUERY EXECUTION REVIEW
+    ---------------------------------------------------------------------------------------------------------
+"""
+
+
+@with_session
+def get_review_by_execution_and_reviewer(execution_id, reviewer_id, session=None):
+    return QueryExecutionReview.get(
+        session=session, query_execution_id=execution_id, reviewer_id=reviewer_id
+    )
+
+
+@with_session
+def get_review_by_id(id, session=None):
+    return QueryExecutionReview.get(session=session, id=id)
+
+
+@with_session
+def create_review(
+    execution_id,
+    reviewer_id,
+    status=QueryExecutionStatus.PENDING_REVIEW,
+    session=None,
+    commit=True,
+):
+    return QueryExecutionReview.create(
+        {
+            "query_execution_id": execution_id,
+            "reviewer_id": reviewer_id,
+            "review_status": status,
+        },
+        commit=commit,
+        session=session,
+    )
+
+
+@with_session
+def update_review(
+    id: int,
+    session=None,
+    commit=True,
+    field_names=None,
+    fields={},
+):
+    return QueryExecutionReview.update(
+        id=id,
+        fields=fields,
+        field_names=field_names,
+        commit=commit,
+        session=session,
+    )

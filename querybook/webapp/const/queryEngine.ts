@@ -11,6 +11,7 @@ export interface IQueryEngine {
     executor: string;
 
     feature_params: {
+        query_review?: boolean;
         row_limit?: number;
         status_checker?: string;
         upload_exporter?: string;
