@@ -18,7 +18,7 @@ interface IProps {
 }
 
 export const QueryComposerExecution: React.FunctionComponent<IProps> = ({
-    id,
+    id,rqw
 }) => {
     const execution = useSelector(
         (state: IStoreState) => state.queryExecutions.queryExecutionById[id]
