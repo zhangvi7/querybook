@@ -35,6 +35,10 @@ def _get_query_doc_id(query_cell_id: int) -> str:
     return f"query_{query_cell_id}"
 
 
+def _get_sql_doc_id(query_cell_id: int) -> str:
+    return f"sql_{query_cell_id}"
+
+
 @with_session
 def record_query_cell_from_es(
     es_query_cell: dict,
@@ -86,6 +90,34 @@ def record_query_cell_from_es(
         LOG.error(f"Failed to process sample query cell: {e}")
 
 
+def record_sql_query_from_es(
+    es_query_cell: dict,
+):
+    """Log sql query from elastic search into the vector store."""
+    # if (
+    #     not get_vector_store()
+    #     or not es_query_cell
+    #     or not es_query_cell["title"]
+    #     or es_query_cell["title"] == "Untitled"
+    # ):
+    #     return
+
+    try:
+        query_text = es_query_cell["query_text"]
+        table_name = es_query_cell["full_table_name"]
+        metadata = {
+            "type": "sql",
+            "tables": table_name,
+            "query_cell_id": es_query_cell["id"],
+        }
+        print("record sql query")
+        doc_id = _get_sql_doc_id(es_query_cell["id"])
+        create_and_store_document(query_text, metadata, doc_id)
+
+    except Exception as e:
+        LOG.error(f"Failed to store SQL query in vector store: {e}")
+
+
 @with_session
 def record_table(
     table: DataTable,
@@ -98,12 +130,12 @@ def record_table(
         LOG.warning("Vector store is not configured.")
         return
 
-    if not table:
-        return
+    # if not table:
+    #     return
 
     try:
-        if get_vector_store().should_skip_table(table):
-            return
+        # if get_vector_store().should_skip_table(table):
+        #     return
 
         metastore_id = table.data_schema.metastore_id
         full_table_name = f"{table.data_schema.name}.{table.name}"
@@ -111,6 +143,7 @@ def record_table(
         sample_query_cells = get_sample_query_cells_by_table_name(
             table_name=full_table_name
         )
+        print("SAMPLE CELLS", sample_query_cells)
 
         # ingest table summary
         summary = ai_assistant.summarize_table(
@@ -137,6 +170,7 @@ def record_table(
             for query_cell in sample_query_cells:
                 LOG.info(f"Ingesting sample query cell: {query_cell}")
                 record_query_cell_from_es(es_query_cell=query_cell, session=session)
+                record_sql_query_from_es(es_query_cell=query_cell)
 
     except Exception as e:
         # will just fail silently to avoid blocking the main process

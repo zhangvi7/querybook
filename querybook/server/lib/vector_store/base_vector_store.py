@@ -108,3 +108,22 @@ class VectorStoreBase(VectorStore):
             table_score_dict[table_name] = table_score_dict.get(table_name, 0) + score
 
         return sorted(table_score_dict.items(), key=lambda x: x[1], reverse=True)[:k]
+
+    def retrieve_similar_sql_queries(
+        self,
+        metastore_id: int,
+        query: str,
+        k=DEFAULT_VECTOR_STORE_FETCH_LIMIT,
+    ) -> list[str]:
+        print("HERE", self.client)
+        print(self.index_name)
+        print(self.embedding_function)
+        print(self.is_aoss)
+
+        # must_query = []
+        # must_query.append({"term": {"metadata.type": "sql"}})
+        # boolean_filter = {"bool": {"must": must_query}}
+        docs = self.similarity_search(query=query, k=100)
+        print("docs_with_score", docs)
+        print("embed", self.embeddings)
+        return docs

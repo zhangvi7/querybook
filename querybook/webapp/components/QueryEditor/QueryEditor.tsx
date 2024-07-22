@@ -23,8 +23,10 @@ import {
 import { useAutoComplete } from 'hooks/queryEditor/useAutoComplete';
 import { useCodeAnalysis } from 'hooks/queryEditor/useCodeAnalysis';
 import { useLint } from 'hooks/queryEditor/useLint';
+import { useCodeMirrorAISuggestions } from 'hooks/useCodeMirrorAISuggestions';
 import { useDebouncedFn } from 'hooks/useDebouncedFn';
 import CodeMirror, { CodeMirrorKeyMap } from 'lib/codemirror';
+import 'lib/codemirror/codemirror-copilot';
 import { SQL_JINJA_MODE } from 'lib/codemirror/codemirror-mode';
 import {
     AutoCompleteType,
@@ -57,6 +59,7 @@ export interface IQueryEditorProps extends IStyledQueryEditorProps {
     keyMap?: CodeMirrorKeyMap;
     className?: string;
     autoCompleteType?: AutoCompleteType;
+    queryEngineId?: number;
 
     /**
      * If provided, then the container component will handle the fullscreen logic
@@ -76,6 +79,7 @@ export interface IQueryEditorProps extends IStyledQueryEditorProps {
         editor: CodeMirror.Editor
     ) => Promise<ILinterWarning[]>;
     onLintCompletion?: (hasError?: boolean) => void;
+    forceSaveQuery: () => Promise<void>;
 }
 
 export interface IQueryEditorHandles {
@@ -115,6 +119,7 @@ export const QueryEditor: React.FC<
             keyMap = {},
             className,
             autoCompleteType = 'all',
+            queryEngineId, // and have query from editor itself
             onFullScreen,
 
             onChange,
@@ -127,6 +132,7 @@ export const QueryEditor: React.FC<
 
             getLintErrors,
             onLintCompletion,
+            forceSaveQuery,
             // props from IStyledQueryEditorProps
             height = 'auto',
             fontSize,
@@ -617,16 +623,23 @@ export const QueryEditor: React.FC<
             onTextHover,
         ]);
 
-        const editorDidMount = useCallback((editor: CodeMirror.Editor) => {
-            editorRef.current = editor;
+        const { emitToWebSocket, inlineSuggestion } =
+            useCodeMirrorAISuggestions(editorRef, queryEngineId);
 
-            // There is a strange bug where codemirror would start with the wrong height (on Execs tab)
-            // which can only be solved by clicking on it
-            // The current work around is to add refresh on mount
-            setTimeout(() => {
-                editor.refresh();
-            }, 50);
-        }, []);
+        const editorDidMount = useCallback(
+            (editor: CodeMirror.Editor) => {
+                editorRef.current = editor;
+                editor.copilotSuggestion(emitToWebSocket, inlineSuggestion);
+
+                // There is a strange bug where codemirror would start with the wrong height (on Execs tab)
+                // which can only be solved by clicking on it
+                // The current work around is to add refresh on mount
+                setTimeout(() => {
+                    editor.refresh();
+                }, 50);
+            },
+            [emitToWebSocket, inlineSuggestion]
+        );
 
         const onBeforeChange = useCallback(
             (editor: CodeMirror.Editor, data, value: string) => {

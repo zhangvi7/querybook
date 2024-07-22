@@ -13,6 +13,7 @@ import './QueryCellTitle.scss';
 const AIAssistantConfig = PublicConfig.ai_assistant;
 
 interface IQueryCellTitleProps {
+    e_id: number;
     cellId: number;
     value: string;
     query: string;
@@ -22,6 +23,7 @@ interface IQueryCellTitleProps {
 }
 
 export const QueryCellTitle: React.FC<IQueryCellTitleProps> = ({
+    e_id,
     cellId,
     value,
     query,
@@ -35,8 +37,8 @@ export const QueryCellTitle: React.FC<IQueryCellTitleProps> = ({
         query;
     const [title, setTitle] = useState<string>('');
 
-    const socket = useAISocket(AICommandType.SQL_TITLE, ({ data }) => {
-        setTitle(data.title);
+    const socket = useAISocket(AICommandType.SQL_AUTOCOMPLETE, ({ data }) => {
+        setTitle(data.suggestion);
     });
 
     useEffect(() => {
@@ -49,7 +51,8 @@ export const QueryCellTitle: React.FC<IQueryCellTitleProps> = ({
         // force save the query beforehand, as we're passing the cellId instead of the actual query for title generation
         await forceSaveQuery();
 
-        socket.emit({ query });
+        socket.emit({ query, query_engine_id: e_id });
+
         trackClick({
             component: ComponentType.AI_ASSISTANT,
             element: ElementType.QUERY_TITLE_GENERATION_BUTTON,
@@ -57,7 +60,7 @@ export const QueryCellTitle: React.FC<IQueryCellTitleProps> = ({
                 cellId,
             },
         });
-    }, [socket]);
+    }, [cellId, e_id, forceSaveQuery, query, socket]);
 
     return (
         <div className="QueryCellTitle">

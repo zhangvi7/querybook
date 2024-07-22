@@ -18,6 +18,18 @@ def text_to_sql(payload={}):
     )
 
 
+@register_socket(AICommandType.SQL_AUTOCOMPLETE.value, namespace=AI_ASSISTANT_NAMESPACE)
+def sql_autocomplete(payload={}):
+    print("SQL AUTOCOMPELTE HERE")
+    query = payload["query"]
+    query_engine_id = payload["query_engine_id"]
+    # TODO: tables = payload.get("tables", [])
+
+    ai_assistant.generate_sql_autocomplete(
+        query_engine_id=query_engine_id, current_partial_query=query
+    )
+
+
 @register_socket(AICommandType.SQL_TITLE.value, namespace=AI_ASSISTANT_NAMESPACE)
 def sql_title(payload={}):
     query = payload["query"]

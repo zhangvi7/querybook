@@ -20,6 +20,9 @@ from logic.elasticsearch import get_sample_query_cells_by_table_name
 from logic.metastore import get_table_by_name
 from models.metastore import DataTableColumn
 from models.query_execution import QueryExecution
+from .prompts.sql_autocomplete_prompt import (
+    SQL_AUTOCOMPLETE_PROMPT,
+)
 
 from .ai_socket import AIWebSocket, with_ai_socket
 from .prompts.sql_edit_prompt import SQL_EDIT_PROMPT
@@ -105,6 +108,15 @@ class BaseAIAssistant(ABC):
 
     def _get_sql_title_prompt(self, query):
         return SQL_TITLE_PROMPT.format(query=query)
+
+    def _get_sql_autocomplete_prompt(
+        self, dialect, current_partial_query, similar_queries
+    ):
+        return SQL_AUTOCOMPLETE_PROMPT.format(
+            current_partial_query=current_partial_query,
+            dialect=dialect,
+            similar_queries=similar_queries,
+        )
 
     def _get_text_to_sql_prompt(self, dialect, question, table_schemas, original_query):
         context_limit = self._get_usable_token_count(AICommandType.TEXT_TO_SQL.value)
@@ -281,6 +293,45 @@ class BaseAIAssistant(ABC):
         self._run_prompt_and_send(
             socket=socket,
             command=AICommandType.SQL_TITLE,
+            llm=llm,
+            prompt_text=prompt,
+        )
+
+    @catch_error
+    @with_session
+    @with_ai_socket(command_type=AICommandType.SQL_AUTOCOMPLETE)
+    def generate_sql_autocomplete(
+        self, query_engine_id, current_partial_query, socket=None, session=None
+    ):
+        """SQL autocomplete suggestions
+
+        Args:
+            query (str): Currently written SQL query
+        """
+        query_engine = admin_logic.get_query_engine_by_id(  # TODO: test query engine passed properly
+            query_engine_id, session=session
+        )
+        # Query the vector store for similar queries TODO refactor below into helper
+        similar_queries = get_vector_store().retrieve_similar_sql_queries(
+            metastore_id=query_engine.metastore_id,
+            query=current_partial_query,
+        )
+        print("SIMILAR QUERIES base_ai_assistant.py", similar_queries)
+
+        prompt = self._get_sql_autocomplete_prompt(
+            dialect=query_engine.language,
+            current_partial_query=current_partial_query,
+            similar_queries=similar_queries,
+        )
+        llm = self._get_llm(
+            ai_command=AICommandType.SQL_AUTOCOMPLETE.value,
+            prompt_length=self._get_token_count(
+                AICommandType.SQL_AUTOCOMPLETE.value, prompt
+            ),
+        )
+        self._run_prompt_and_send(
+            socket=socket,
+            command=AICommandType.SQL_AUTOCOMPLETE,
             llm=llm,
             prompt_text=prompt,
         )

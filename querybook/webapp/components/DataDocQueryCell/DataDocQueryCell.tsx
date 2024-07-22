@@ -782,6 +782,7 @@ class DataDocQueryCellComponent extends React.PureComponent<IProps, IState> {
 
         const queryTitleDOM = isEditable ? (
             <QueryCellTitle
+                e_id={this.engineId}
                 cellId={cellId}
                 value={meta.title}
                 onChange={this.handleMetaTitleChange}
@@ -836,22 +837,23 @@ class DataDocQueryCellComponent extends React.PureComponent<IProps, IState> {
                         {this.getAdditionalDropDownButtonDOM()}
                     </div>
                 </div>
-                {AIAssistantConfig.enabled && isEditable && (
-                    <AICommandBar
-                        query={query}
-                        queryEngine={queryEngineById[this.engineId]}
-                        tablesInQuery={this.state.tableNamesInQuery}
-                        onUpdateQuery={this.handleChange}
-                        onUpdateEngineId={this.handleMetaChange.bind(
-                            this,
-                            'engine'
-                        )}
-                        onFormatQuery={this.formatQuery.bind(this, {
-                            case: 'upper',
-                        })}
-                        ref={this.commandInputRef}
-                    />
-                )}
+                {AIAssistantConfig.enabled &&
+                    isEditable && ( // TODO: Example Text2Sql here
+                        <AICommandBar
+                            query={query}
+                            queryEngine={queryEngineById[this.engineId]}
+                            tablesInQuery={this.state.tableNamesInQuery}
+                            onUpdateQuery={this.handleChange}
+                            onUpdateEngineId={this.handleMetaChange.bind(
+                                this,
+                                'engine'
+                            )}
+                            onFormatQuery={this.formatQuery.bind(this, {
+                                case: 'upper',
+                            })}
+                            ref={this.commandInputRef}
+                        />
+                    )}
             </>
         );
     }

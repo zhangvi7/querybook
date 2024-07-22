@@ -11,7 +11,7 @@ def _sync_query_cells_by_data_doc_id(doc_id, session=None):
 
     query_cells = get_query_cells_by_data_doc_id(doc_id, session=session)
     for cell in query_cells:
-        update_query_cell_by_id(cell.id, session=session)
+        update_query_cell_by_id(cell.id, update_vector_store=True, session=session)
 
 
 @with_session

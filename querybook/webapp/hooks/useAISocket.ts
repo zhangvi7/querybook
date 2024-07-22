@@ -15,7 +15,6 @@ export function useAISocket(
     onData: (data: { type?: string; data: { [key: string]: string } }) => void
 ): AISocket {
     const [loading, setLoading] = useState(false);
-
     const eventHandler = useCallback(
         (event, payload) => {
             switch (event) {
