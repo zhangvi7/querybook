@@ -26,7 +26,7 @@ import 'codemirror/theme/material-palenight.css';
 import 'codemirror/theme/monokai.css';
 import 'codemirror/theme/solarized.css';
 // Query AI Suggestions
-import 'lib/codemirror/codemirror-copilot';
+import 'lib/codemirror/codemirror-ai-suggestions';
 // This should apply the hover option to codemirror
 import 'lib/codemirror/codemirror-hover';
 
