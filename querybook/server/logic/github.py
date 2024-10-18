@@ -1,3 +1,4 @@
+from typing import Optional
 from app.db import with_session
 from models.github import GitHubLink
 from models.datadoc import DataDoc
@@ -36,9 +37,11 @@ def create_repo_link(
 
 
 @with_session
-def get_repo_link(datadoc_id: int, session=None):
-    github_link = GitHubLink.get(datadoc_id=datadoc_id, session=session)
-    assert (
-        github_link is not None
-    ), f"GitHub link for DataDoc with id {datadoc_id} not found"
-    return github_link
+def get_repo_link(datadoc_id: int, session=None) -> Optional[GitHubLink]:
+    return GitHubLink.get(datadoc_id=datadoc_id, session=session)
+
+
+@with_session
+def delete_repo_link(datadoc_id: int, commit=True, session=None):
+    github_link = get_repo_link(datadoc_id=datadoc_id, session=session)
+    GitHubLink.delete(id=github_link.id, commit=commit, session=session)

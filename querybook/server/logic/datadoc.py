@@ -248,6 +248,46 @@ def clone_data_doc(id, owner_uid, commit=True, session=None):
     return new_data_doc
 
 
+@with_session
+def restore_data_doc(restored_datadoc: DataDoc, commit=True, session=None) -> DataDoc:
+    # Update the DataDoc fields
+    updated_datadoc = update_data_doc(
+        id=restored_datadoc.id,
+        commit=False,
+        session=session,
+        **{
+            "public": restored_datadoc.public,
+            "archived": restored_datadoc.archived,
+            "owner_uid": restored_datadoc.owner_uid,
+            "title": restored_datadoc.title,
+            "meta": restored_datadoc.meta,
+        },
+    )
+
+    # Update each DataCell
+    for restored_cell in restored_datadoc.cells:
+        update_data_cell(
+            id=restored_cell.id,
+            commit=False,
+            session=session,
+            **{
+                "context": restored_cell.context,
+                "meta": restored_cell.meta,
+            },
+        )
+
+    if commit:
+        session.commit()
+        update_es_data_doc_by_id(updated_datadoc.id)
+        update_es_queries_by_datadoc_id(updated_datadoc.id)
+    else:
+        session.flush()
+
+    session.refresh(updated_datadoc)
+
+    return updated_datadoc
+
+
 """
     ----------------------------------------------------------------------------------------------------------
     DATA CELL
