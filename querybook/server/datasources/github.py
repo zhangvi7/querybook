@@ -30,7 +30,7 @@ def connect_github() -> Dict[str, str]:
 
 
 @register("/github/is_authenticated/", methods=["GET"])
-def is_github_authenticated() -> str:
+def is_github_authenticated() -> Dict[str, bool]:
     github_manager = get_github_manager()
     is_authenticated = github_manager.get_github_token() is not None
     return {"is_authenticated": is_authenticated}
@@ -41,6 +41,25 @@ def link_datadoc_to_github(
     datadoc_id: int,
     directory: str,
 ) -> Dict:
+    if branch is None:
+        branch = "main"
+    if file_path is None:
+        file_path = f"datadocs/datadoc_{datadoc_id}.md"
+
+    if repo_url.startswith("https://github.com/"):
+        repo_url = repo_url.replace("https://github.com/", "")
+    elif repo_url.startswith("github.com/"):
+        repo_url = repo_url.replace("github.com/", "")
+
+    github_link = GitHubLink(
+        datadoc_id=datadoc_id,
+        user_id=current_user.id,
+        repo_url=repo_url,
+        branch=branch,
+        file_path=file_path,
+    )
+    validate_github_link(github_link=github_link)
+
     return logic.create_repo_link(
         datadoc_id=datadoc_id, user_id=current_user.id, directory=directory
     )
