@@ -10,11 +10,13 @@ import { DebouncedPasswordInput } from 'ui/DebouncedInput/DebouncedPasswordInput
 export interface IInputFieldProps extends Partial<IDebouncedInputProps> {
     name: string;
     inputType?: 'text' | 'password';
+    placeholder?: string;
 }
 
 export const InputField: React.FC<IInputFieldProps> = ({
     name,
     inputType = 'text',
+    placeholder,
     ...debouncedInputProps
 }) => {
     const [_, meta, helpers] = useField(name);
@@ -33,6 +35,7 @@ export const InputField: React.FC<IInputFieldProps> = ({
             inputProps={{
                 className: 'input',
                 onBlur: () => helpers.setTouched(true),
+                placeholder,
                 ...debouncedInputProps.inputProps,
             }}
             flex={debouncedInputProps.flex ?? true}

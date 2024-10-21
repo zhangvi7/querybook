@@ -32,6 +32,7 @@ import {
     DataDocEditorResource,
     DataDocResource,
 } from 'resource/dataDoc';
+import { GitHubResource } from 'resource/github';
 
 import {
     IReceiveDataDocAction,
@@ -188,6 +189,16 @@ export function receiveDataDocs(
             environmentId,
             filterMode,
         },
+    };
+}
+
+export function restoreDataDocVersion(
+    docId: number,
+    commitSha: string
+): ThunkResult<Promise<IDataDoc>> {
+    return async (dispatch, getState) => {
+        await GitHubResource.restoreDataDocVersion(docId, commitSha);
+        return dispatch(fetchDataDoc(docId));
     };
 }
 

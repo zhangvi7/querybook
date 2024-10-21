@@ -41,28 +41,10 @@ def link_datadoc_to_github(
     datadoc_id: int,
     directory: str,
 ) -> Dict:
-    if branch is None:
-        branch = "main"
-    if file_path is None:
-        file_path = f"datadocs/datadoc_{datadoc_id}.md"
-
-    if repo_url.startswith("https://github.com/"):
-        repo_url = repo_url.replace("https://github.com/", "")
-    elif repo_url.startswith("github.com/"):
-        repo_url = repo_url.replace("github.com/", "")
-
-    github_link = GitHubLink(
-        datadoc_id=datadoc_id,
-        user_id=current_user.id,
-        repo_url=repo_url,
-        branch=branch,
-        file_path=file_path,
-    )
-    validate_github_link(github_link=github_link)
-
-    return logic.create_repo_link(
+    github_link = logic.create_repo_link(
         datadoc_id=datadoc_id, user_id=current_user.id, directory=directory
     )
+    return github_link.to_dict()
 
 
 @register("/github/datadocs/<int:datadoc_id>/commit/", methods=["POST"])
