@@ -6,3 +6,35 @@
 .GitHubAuth-icon {
     margin-bottom: 20px;
 }
+
+.github-tab-item .flex-center {
+    display: flex;
+    align-items: center;
+}
+
+.github-tab-item .flex-center .Icon {
+    margin-right: 8px;
+}
+
+.StepsBar {
+    margin-bottom: 16px;
+}
+
+.GitHubVersions {
+    .commit-list {
+        max-height: 600px;
+        overflow-y: auto;
+        padding-right: 10px;
+        margin-top: 16px;
+    }
+
+    .commit-actions {
+        display: flex;
+        align-items: center;
+    }
+
+    .load-more-button {
+        margin-top: 12px;
+        margin-bottom: 16px;
+    }
+}

@@ -18,7 +18,7 @@ def with_github_client(f):
         datadoc_id = kwargs.get("datadoc_id")
         github_link = logic.get_repo_link(datadoc_id)
         access_token = github_manager.get_github_token()
-        github_client = GitHubClient(github_link, access_token)
+        github_client = GitHubClient(access_token=access_token, github_link=github_link)
         return f(github_client, *args, **kwargs)
 
     return decorated_function

@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 
-import { GitHubResource } from 'resource/github';
 import { IconButton } from 'ui/Button/IconButton';
 
-import { GitHubModal } from './GitHubModal';
+import { GitHubWizard } from './GitHubWizard';
 
 interface IProps {
     docId: number;
@@ -12,49 +11,27 @@ interface IProps {
 export const DataDocGitHubButton: React.FunctionComponent<IProps> = ({
     docId,
 }) => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isWizardOpen, setIsWizardOpen] = useState(false);
 
-    useEffect(() => {
-        const checkAuthentication = async () => {
-            try {
-                const { data } = await GitHubResource.isAuthenticated();
-                setIsAuthenticated(data.is_authenticated);
-            } catch (error) {
-                console.error(
-                    'Failed to check GitHub authentication status:',
-                    error
-                );
-            }
-        };
-
-        checkAuthentication();
+    const handleOpenWizard = useCallback(() => {
+        setIsWizardOpen(true);
     }, []);
 
-    const handleOpenModal = useCallback(() => {
-        setIsModalOpen(true);
-    }, []);
-
-    const handleCloseModal = useCallback(() => {
-        setIsModalOpen(false);
+    const handleCloseWizard = useCallback(() => {
+        setIsWizardOpen(false);
     }, []);
 
     return (
         <>
             <IconButton
                 icon="Github"
-                onClick={handleOpenModal}
+                onClick={handleOpenWizard}
                 tooltip="Connect to GitHub"
                 tooltipPos="left"
                 title="GitHub"
             />
-            {isModalOpen && (
-                <GitHubModal
-                    docId={docId}
-                    isAuthenticated={isAuthenticated}
-                    setIsAuthenticated={setIsAuthenticated}
-                    onClose={handleCloseModal}
-                />
+            {isWizardOpen && (
+                <GitHubWizard docId={docId} onClose={handleCloseWizard} />
             )}
         </>
     );
