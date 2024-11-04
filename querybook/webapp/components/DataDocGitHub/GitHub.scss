@@ -1,8 +1,42 @@
 .GitHubAuth {
     text-align: center;
-    padding: 20px;
 }
 
-.GitHubAuth-icon {
-    margin-bottom: 20px;
+.github-tab-item .flex-center {
+    display: flex;
+    align-items: center;
+}
+
+.github-tab-item .flex-center .Icon {
+    margin-right: 4px;
+}
+
+.feature-disabled {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--color-light);
+}
+
+.GitHubVersions {
+    .commit-list {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .commit-actions {
+        display: flex;
+        align-items: center;
+    }
+}
+
+.GitHubSettings {
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.GitHubSettings-section-content {
+    border-radius: 4px;
 }
